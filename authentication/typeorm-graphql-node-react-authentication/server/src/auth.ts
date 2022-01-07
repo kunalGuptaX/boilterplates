@@ -25,6 +25,12 @@ export const createRefreshToken = (user: User) => {
   );
 };
 
+export const verifyToken = (token: string) => {
+  const jwtToken = token?.split(" ")[1];
+  const payload = verify(jwtToken, process.env.ACCESS_TOKEN_SECRET!);
+  return payload;
+};
+
 export const isAuth: MiddlewareFn<MyContext> = ({ context }, next) => {
   const authorization = context.req.headers["authorization"];
 
@@ -33,9 +39,7 @@ export const isAuth: MiddlewareFn<MyContext> = ({ context }, next) => {
   }
 
   try {
-    const token = authorization?.split(" ")[1];
-    const payload = verify(token, process.env.ACCESS_TOKEN_SECRET!);
-    context.payload = payload as any;
+    context.payload = verifyToken(authorization) as any;
   } catch (err) {
     console.log(err);
     throw new Error("not authenticated");

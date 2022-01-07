@@ -11,7 +11,7 @@ import {
 } from "type-graphql";
 import { hash, compare } from "bcryptjs";
 import { MyContext } from "src/types/MyContext";
-import { createAccessToken, createRefreshToken } from "../auth";
+import { createAccessToken, createRefreshToken, verifyToken } from "../auth";
 import { isAuth } from "../auth";
 import { sendRefreshToken } from "../auth";
 
@@ -26,9 +26,20 @@ class LoginResponse {
 @Resolver()
 export class UserResolver {
   @Query(() => User, { nullable: true })
-  @UseMiddleware(isAuth)
-  me(@Ctx() { payload }: MyContext) {
-    return User.findOne(payload!.userId);
+  me(@Ctx() context: MyContext) {
+    const authorization = context.req.headers["authorization"];
+
+    if (!authorization) {
+      return null;
+    }
+
+    try {
+      const payload = verifyToken(authorization) as { userId: string };
+      return User.findOne(payload.userId);
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
   }
 
   @Query(() => String)
